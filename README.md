@@ -462,7 +462,7 @@ pub struct RoyaltyDistributed {
 
 ### 6.5 RevenueOracle
 
-**Purpose:** On-chain publication of verified revenue data from film distributors (TV networks, theaters, streaming platforms). Bridges the physical-digital gap — the #1 differentiator for accepted RWA projects.
+**Purpose:** On-chain publication of verified revenue data from film distributors (TV networks, theaters, streaming platforms). Provides investors with an independently verifiable link between off-chain film revenues and on-chain distribution payouts.
 
 **Functions:**
 

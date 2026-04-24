@@ -462,7 +462,7 @@ pub struct RoyaltyDistributed {
 
 ### 6.5 RevenueOracle
 
-**Objectif :** Publication on-chain de données de revenus vérifiées provenant des distributeurs de films (chaînes TV, cinémas, plateformes de streaming). Assure le pont physique-digital — le facteur différenciant #1 pour les projets RWA acceptés.
+**Objectif :** Publication on-chain de données de revenus vérifiées provenant des distributeurs de films (chaînes TV, cinémas, plateformes de streaming). Fournit aux investisseurs un lien vérifiable de manière indépendante entre les revenus off-chain des films et les distributions on-chain.
 
 **Fonctions :**
 
