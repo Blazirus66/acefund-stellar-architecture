@@ -884,13 +884,57 @@ This waterfall is encoded in the legal contract (off-chain, signed via DocuSign)
 | Component | Technology | Purpose |
 |-----------|------------|---------|
 | **Backend API** | Node.js / Java | Orchestration, issuer management, marketplace logic |
-| **KYC SDK** | Sumsub API | Identity verification (delegated to issuer) |
+| **KYC SDK** | Veriff / Sumsub API | Identity verification (delegated to issuer, provider selectable per issuer) |
 | **Legal Signing** | DocuSign / Yousign | Revenue sharing contracts, investor agreements |
-| **Payment Gateway** | BridgerPay | 80+ payment methods (Visa, PayPal, bank transfer) |
+| **Payment Gateway** | BridgerPay | 80+ payment methods (Visa, PayPal, bank transfer, crypto) |
+| **Direct Bank Transfer** | Issuer IBAN | Fiat payments sent directly to issuer's bank account (non-custodial) |
+| **Cap Table Engine** | Backend database | Real-time ownership tracking per asset partition, dividend rights, investor registry, shareholder agreement enforcement |
 | **Hosting** | OVH Cloud (EU) | GDPR-compliant, EU data residency |
 | **IPFS** | Pinata / Infura | Legal contract storage, revenue report archives |
 
-### 12.2 Data Separation
+### 12.2 Issuer Workflow (SaaS Dashboard)
+
+The platform provides a 4-step workflow for film producers to create and launch a tokenized offering:
+
+```mermaid
+graph LR
+    S1[Step 1<br/>Instrument<br/>Structuring] --> S2[Step 2<br/>Legal<br/>Documentation]
+    S2 --> S3[Step 3<br/>Payment<br/>Configuration]
+    S3 --> S4[Step 4<br/>Offering<br/>Launch]
+
+    S1a["• Pricing & valuation<br/>• Duration & maturity<br/>• Royalty rules<br/>• Investor rights<br/>• Token supply & partitions"]
+    S2a["• Investment agreements<br/>• Revenue sharing contracts<br/>• Offering documentation<br/>• e-Signature via<br/>  DocuSign / Yousign"]
+    S3a["• Crypto wallet (USDC)<br/>• PSP via BridgerPay<br/>  (Visa, PayPal, etc.)<br/>• Direct bank transfer<br/>  (issuer IBAN)"]
+    S4a["• Published on<br/>  investor marketplace<br/>• AssetForge deploys<br/>  Classic Asset + SAC<br/>• Tokens ready for sale"]
+
+    S1 --- S1a
+    S2 --- S2a
+    S3 --- S3a
+    S4 --- S4a
+
+    style S1 fill:#1a1a2e,color:#fff
+    style S2 fill:#1a1a2e,color:#fff
+    style S3 fill:#1a1a2e,color:#fff
+    style S4 fill:#10b981,color:#fff
+```
+
+**Key design choice:** Payment flows are configured so that funds transfer **directly from investor to issuer** (via BridgerPay, crypto wallet, or bank transfer). The platform never holds or intermediates funds. This is fundamental to the non-custodial architecture.
+
+### 12.3 Cap Table Management
+
+The platform maintains a real-time cap table for each tokenized film asset, synchronized between on-chain and off-chain state:
+
+| Data Point | Source | Purpose |
+|------------|--------|---------|
+| Token balances (current) | Stellar ledger (SAC `balance()`) | Authoritative ownership record |
+| Investor identity | Off-chain database (KYC records) | Maps Stellar addresses to verified identities |
+| Distribution history | Stellar ledger (USDC transfers) | Cumulative dividends per investor |
+| Shareholder agreements | IPFS (hash on-chain) | Legal contract backing each token position |
+| Transaction history | Stellar ledger + off-chain logs | Full audit trail with tx hashes linked to investor records |
+
+The cap table engine reconciles on-chain balances with off-chain investor records, ensuring that the issuer always has an accurate view of ownership, dividend rights, and compliance status. Transaction hashes from every on-chain operation are stored in the off-chain database and linked to the relevant investor, asset, and compliance records — enabling end-to-end auditability.
+
+### 12.4 Data Separation
 
 | Data | Storage | Reason |
 |------|---------|--------|
@@ -899,8 +943,10 @@ This waterfall is encoded in the legal contract (off-chain, signed via DocuSign)
 | Revenue reports (summary) | Soroban contract (RevenueOracle) | On-chain auditability |
 | Distribution history | Stellar ledger (USDC transfers) | On-chain transparency |
 | Investor PII (name, ID docs) | OVH Cloud (encrypted, issuer-controlled) | GDPR, data privacy |
+| Cap table, ownership tracking | Backend database + Stellar ledger | Reconciled on/off-chain |
 | Legal contracts (full text) | IPFS (hash on-chain) | Immutability + availability |
 | Film metadata, marketing | Backend database | Operational data |
+| Payment records, reconciliation | Backend database | Operational audit trail |
 
 ---
 

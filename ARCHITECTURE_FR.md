@@ -870,13 +870,57 @@ Ce waterfall est encodé dans le contrat juridique (off-chain, signé via DocuSi
 | Composant | Technologie | Objectif |
 |-----------|------------|---------|
 | **Backend API** | Node.js / Java | Orchestration, gestion émetteurs, logique marketplace |
-| **SDK KYC** | API Sumsub | Vérification d'identité (déléguée à l'émetteur) |
+| **SDK KYC** | API Veriff / Sumsub | Vérification d'identité (déléguée à l'émetteur, provider sélectionnable par émetteur) |
 | **Signature Juridique** | DocuSign / Yousign | Contrats de partage de revenus, accords investisseurs |
-| **Passerelle de Paiement** | BridgerPay | 80+ moyens de paiement (Visa, PayPal, virement) |
+| **Passerelle de Paiement** | BridgerPay | 80+ moyens de paiement (Visa, PayPal, virement, crypto) |
+| **Virement Bancaire Direct** | IBAN de l'émetteur | Paiements fiat envoyés directement sur le compte bancaire de l'émetteur (non-custodial) |
+| **Moteur Cap Table** | Base de données backend | Suivi de propriété en temps réel par partition d'asset, droits aux dividendes, registre investisseurs, application des pactes d'actionnaires |
 | **Hébergement** | OVH Cloud (UE) | Conforme RGPD, résidence de données UE |
 | **IPFS** | Pinata / Infura | Stockage contrats juridiques, archives rapports de revenus |
 
-### 12.2 Séparation des Données
+### 12.2 Workflow Émetteur (Dashboard SaaS)
+
+La plateforme fournit un workflow en 4 étapes pour les producteurs de films afin de créer et lancer une offre tokenisée :
+
+```mermaid
+graph LR
+    S1[Étape 1<br/>Structuration<br/>de l'Instrument] --> S2[Étape 2<br/>Documentation<br/>Juridique]
+    S2 --> S3[Étape 3<br/>Configuration<br/>Paiement]
+    S3 --> S4[Étape 4<br/>Lancement<br/>de l'Offre]
+
+    S1a["• Prix & valorisation<br/>• Durée & maturité<br/>• Règles de royalties<br/>• Droits investisseurs<br/>• Supply & partitions tokens"]
+    S2a["• Contrats d'investissement<br/>• Contrats de partage de revenus<br/>• Documentation d'offre<br/>• Signature électronique via<br/>  DocuSign / Yousign"]
+    S3a["• Wallet crypto (USDC)<br/>• PSP via BridgerPay<br/>  (Visa, PayPal, etc.)<br/>• Virement bancaire direct<br/>  (IBAN émetteur)"]
+    S4a["• Publié sur la<br/>  marketplace investisseurs<br/>• AssetForge déploie<br/>  Classic Asset + SAC<br/>• Tokens prêts à la vente"]
+
+    S1 --- S1a
+    S2 --- S2a
+    S3 --- S3a
+    S4 --- S4a
+
+    style S1 fill:#1a1a2e,color:#fff
+    style S2 fill:#1a1a2e,color:#fff
+    style S3 fill:#1a1a2e,color:#fff
+    style S4 fill:#10b981,color:#fff
+```
+
+**Choix de conception clé :** Les flux de paiement sont configurés pour que les fonds transitent **directement de l'investisseur vers l'émetteur** (via BridgerPay, wallet crypto ou virement bancaire). La plateforme ne détient ni n'intermédie jamais les fonds. C'est fondamental pour l'architecture non-custodial.
+
+### 12.3 Gestion du Cap Table
+
+La plateforme maintient un cap table en temps réel pour chaque asset film tokenisé, synchronisé entre l'état on-chain et off-chain :
+
+| Donnée | Source | Objectif |
+|--------|--------|---------|
+| Balances tokens (actuelles) | Ledger Stellar (SAC `balance()`) | Registre de propriété faisant autorité |
+| Identité investisseur | Base de données off-chain (records KYC) | Associe les adresses Stellar aux identités vérifiées |
+| Historique distributions | Ledger Stellar (transferts USDC) | Dividendes cumulés par investisseur |
+| Pactes d'actionnaires | IPFS (hash on-chain) | Contrat juridique adossé à chaque position en tokens |
+| Historique transactions | Ledger Stellar + logs off-chain | Piste d'audit complète avec hashes tx liés aux records investisseurs |
+
+Le moteur cap table réconcilie les balances on-chain avec les records investisseurs off-chain, garantissant que l'émetteur dispose toujours d'une vue précise de la propriété, des droits aux dividendes et du statut de conformité. Les hashes de transaction de chaque opération on-chain sont stockés dans la base de données off-chain et liés à l'investisseur, l'asset et les records de conformité concernés — permettant une auditabilité de bout en bout.
+
+### 12.4 Séparation des Données
 
 | Données | Stockage | Raison |
 |---------|----------|--------|
@@ -885,8 +929,10 @@ Ce waterfall est encodé dans le contrat juridique (off-chain, signé via DocuSi
 | Rapports de revenus (résumé) | Contrat Soroban (RevenueOracle) | Auditabilité on-chain |
 | Historique distributions | Ledger Stellar (transferts USDC) | Transparence on-chain |
 | PII investisseurs (nom, pièces d'identité) | OVH Cloud (chiffré, contrôlé par émetteur) | RGPD, confidentialité données |
+| Cap table, suivi de propriété | Base de données backend + Ledger Stellar | Réconcilié on/off-chain |
 | Contrats juridiques (texte intégral) | IPFS (hash on-chain) | Immuabilité + disponibilité |
 | Métadonnées films, marketing | Base de données backend | Données opérationnelles |
+| Records de paiement, réconciliation | Base de données backend | Piste d'audit opérationnelle |
 
 ---
 
